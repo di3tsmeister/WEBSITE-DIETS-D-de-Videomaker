@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+
+    <!-- door dd erin geplakt -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Overpass:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+   <!-- tot hier -->
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Name - Videomaker Portfolio</title>
+    <style>
+        body {
+            font-family: "Overpass", sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+
+        header {
+            background-color: #333;
+            color: #fff;
+            padding: 20px;
+            text-align: center;
+        }
+        header h1 {
+            margin: 0;
+            font-size: 2.5em;
+        }
+        header p {
+            margin: 5px 0 0;
+            font-size: 1.2em;
+        }
+        .hero {
+            position: relative;
+            height: 70vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #000;
+        }
+        .hero video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .hero .overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #fff;
+            text-align: center;
+        }
+        .hero .overlay h2 {
+            font-size: 3em;
+            margin: 0;
+        }
+        .about {
+            padding: 50px 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .about img {
+            width: 300px;
+            border-radius: 50%;
+            margin-right: 40px;
+        }
+        .about .text {
+            flex: 1;
+        }
+        .about h2 {
+            font-size: 2em;
+        }
+        .contact {
+            background-color: #333;
+            color: #fff;
+            padding: 50px 20px;
+            text-align: center;
+        }
+        .contact h2 {
+            font-size: 2em;
+        }
+        .contact button {
+            background-color: #fff;
+            color: #333;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.2em;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: background-color 0.3s;
+        }
+        .contact button:hover {
+            background-color: #ddd;
+        }
+        footer {
+            text-align: center;
+            padding: 20px;
+            background-color: #222;
+            color: #fff;
+        }
+        @media (max-width: 768px) {
+            .about {
+                flex-direction: column;
+                text-align: center;
+            }
+            .about img {
+                margin: 0 0 20px;
+            }
+        }
+
+        /* door chatGPT maar werkt niet */
+        .video-container {
+            position: relative;
+            padding-bottom: 56.25%; /* 16:9 verhouding */
+            height: 0;
+            overflow: hidden;
+            max-width: 100%;
+            background: #000; /* zwart kader als de video laadt */
+}
+
+        .video-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+}
+    </style>
+    
+</head>
+<body>
+    <header>
+        <h1>Diets Dijkstra</h1>
+        <p>Videomaker</p>
+    </header>
+
+<section class="hero">
+    <div class="video-container">
+        <iframe width="560" height="315" 
+            src="https://www.youtube.com/embed/YIl-awY250k?si=hKLJMOKGbFtaDpYx" 
+            title="YouTube video player" 
+            frameborder="0" 
+            allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+            referrerpolicy="strict-origin-when-cross-origin" 
+            allowfullscreen>
+        </iframe>
+    </div>
+    <div class="overlay">
+        <h2>Watch My Showreel</h2>
+    </div>
+</section>
+
+    <section class="about">
+        <!-- Replace the src with your actual photo URL -->
+        <img src="https://example.com/your-photo.jpg" alt="Diets Dijkstra">
+        <div class="text">
+            <h2>About Me</h2>
+            <p>Hi, I'm Your Name, a passionate videomaker with over X years of experience in creating stunning visuals for brands, events, and stories. I specialize in [your specialties, e.g., commercial videos, documentaries, wedding films]. My goal is to bring your vision to life through creative storytelling and high-quality production.</p>
+            <p>I've worked with clients like [list some clients or projects], and I'm always excited to take on new challenges. Let's collaborate!</p>
+        </div>
+    </section>
+
+    <section class="contact">
+        <h2>Ready to Hire Me?</h2>
+        <p>Contact me today to discuss your project. I'm available for freelance work, collaborations, and more.</p>
+        <button onclick="window.location.href='mailto:your.email@example.com?subject=Hiring Inquiry'">Hire Me</button>
+        <p>Email: your.email@example.com | Phone: (123) 456-7890</p>
+    </section>
+
+    <footer>
+        <p>&copy; 2025 Your Name. All rights reserved.</p>
+    </footer>
+</body>
+</html>
