@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <title>Varkentje's Bos: De Instructie Edition</title>
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser-arcade-physics.min.js"></script>
+    <style>
+        body { margin: 0; background-color: #000; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        canvas { border: 2px solid #fff; image-rendering: pixelated; }
+    </style>
+</head>
+<body>
+<script>
+const config = {
+    type: Phaser.AUTO,
+    width: 800,
+    height: 450,
+    physics: {
+        default: 'arcade',
+        arcade: { gravity: { y: 1200 }, debug: false }
+    },
+    scene: { preload: preload, create: create, update: update }
+};
+
+const game = new Phaser.Game(config);
+let player, cursors, attackKey, platforms, enemies, bats, hearts, villa, scoreText, attackHitbox;
+let startInstruction; // Variabele voor de instructietekst
+let score = 0;
+let gameOver = false;
+let isAttacking = false;
+
+function preload() {
+    // We wijzen nu naar de nieuwe map: PICS_GAME
+    this.load.image('pig', 'PICS_GAME/pig.png');
+    this.load.image('wolf', 'PICS_GAME/wolf.png');
+    this.load.image('bat', 'PICS_GAME/bat.png');
+    this.load.image('heart', 'PICS_GAME/heart.png');
+    this.load.image('tree', 'PICS_GAME/tree.png');
+    this.load.image('bush', 'PICS_GAME/bush.png');
+    this.load.image('sky', 'PICS_GAME/sky.png');
+    this.load.image('villa', 'PICS_GAME/villa.png');
+
+    // Nood-textures (blijven staan voor het geval een naam verkeerd gespeld is)
+    const g = this.make.graphics();
+    g.fillStyle(0xff80aa).fillRect(0,0,32,32); g.generateTexture('fallback_pig', 32,32);
+    g.fillStyle(0x224422).fillRect(0,0,64,64); g.generateTexture('fallback_bush', 64,64);
+}
+
+function create() {
+    const worldWidth = 8000;
+    this.physics.world.setBounds(0, 0, worldWidth, 500);
+
+    // 1. Sky
+    if (this.textures.exists('sky')) {
+        this.add.tileSprite(0, 0, 800, 450, 'sky').setOrigin(0).setScrollFactor(0);
+    } else {
+        this.add.rectangle(0,0,800,450, 0x050515).setOrigin(0).setScrollFactor(0);
+    }
+
+    // 2. Parallax Bomen
+    for (let i = 0; i < 40; i++) {
+        let x = i * 250 + Math.random() * 100;
+        let treeTex = this.textures.exists('tree') ? 'tree' : 'fallback_bush';
+        if (treeTex === 'tree') this.add.image(x, 420, treeTex).setOrigin(0.5, 1).setScrollFactor(0.3);
+    }
+
+    // 3. Platforms & Gaten & Onzichtbare Muren voor Wolven
+    platforms = this.physics.add.staticGroup();
+    hearts = this.physics.add.group();
+    enemies = this.physics.add.group();
+    bats = this.physics.add.group();
+
+    for (let i = 0; i < 130; i++) {
+        let x = i * 64;
+        let isGap = (i > 20 && i < 26) || (i > 50 && i < 56) || (i > 85 && i < 94);
+        
+        if (isGap) {
+            // Plaats onzichtbare blokjes aan de randen van de gaten zodat wolven omdraaien
+            let blockerL = this.add.rectangle(x - 10, 380, 10, 100, 0xffffff, 0);
+            let blockerR = this.add.rectangle(x + 74, 380, 10, 100, 0xffffff, 0);
+            this.physics.add.existing(blockerL, true);
+            this.physics.add.existing(blockerR, true);
+            platforms.add(blockerL);
+            platforms.add(blockerR);
+            
+            this.add.rectangle(x + 32, 440, 64, 20, 0x0044ff).setOrigin(0.5);
+            continue; 
+        }
+        platforms.create(x, 420, 'bush').setDisplaySize(64, 64).setOrigin(0).refreshBody();
+    }
+
+    // 4. Plateaus
+    const plateauCoords = [
+        {x: 1380, y: 320}, {x: 1530, y: 220}, {x: 1680, y: 320},
+        {x: 3280, y: 320}, {x: 3480, y: 220}, {x: 3680, y: 320},
+        {x: 5500, y: 320}, {x: 5700, y: 220}, {x: 5950, y: 220}, {x: 6150, y: 320}
+    ];
+    plateauCoords.forEach(pos => {
+        platforms.create(pos.x, pos.y, 'bush').setDisplaySize(130, 30).refreshBody();
+        hearts.create(pos.x, pos.y - 50, 'heart').setScale(0.7);
+    });
+
+    // 5. Player, Villa & Vijanden
+    let pTex = this.textures.exists('pig') ? 'pig' : 'fallback_pig';
+    player = this.physics.add.sprite(200, 350, pTex);
+    
+    villa = this.physics.add.sprite(worldWidth - 250, 420, 'villa').setOrigin(0.5, 1);
+
+    // Wolven (30 stuks)
+    for (let i = 0; i < 30; i++) {
+        let x = Phaser.Math.Between(800, 7500);
+        let wolf = enemies.create(x, 300, 'wolf');
+        wolf.setVelocityX(-100);
+        wolf.setBounce(1, 0);
+    }
+
+    // Vleermuizen (15 stuks)
+    for (let i = 0; i < 15; i++) {
+        let bat = bats.create(Phaser.Math.Between(1000, 7500), Phaser.Math.Between(100, 250), 'bat');
+        bat.body.allowGravity = false;
+        bat.startY = bat.y;
+        bat.diveTimer = 0;
+        bat.isTargeting = false;
+    }
+
+    // Aanval Hitbox
+    attackHitbox = this.add.rectangle(0, 0, 80, 50, 0xffffff, 0); 
+    this.physics.add.existing(attackHitbox);
+    attackHitbox.body.allowGravity = false;
+
+    // 6. Physics & Interactie
+    this.physics.add.collider(player, platforms);
+    this.physics.add.collider(enemies, platforms);
+    this.physics.add.collider(villa, platforms);
+    
+    this.physics.add.overlap(player, hearts, (p, h) => { h.destroy(); score += 100; scoreText.setText('Score: ' + score); });
+    this.physics.add.overlap(player, enemies, hitPlayer, null, this);
+    this.physics.add.overlap(player, bats, hitPlayer, null, this);
+    this.physics.add.overlap(attackHitbox, enemies, (hb, e) => { if(isAttacking) e.destroy(); });
+    this.physics.add.overlap(attackHitbox, bats, (hb, b) => { if(isAttacking) b.destroy(); });
+    this.physics.add.overlap(player, villa, winGame, null, this);
+
+    // 7. Camera & UI
+    this.cameras.main.startFollow(player, true, 0.1, 0.1);
+    this.cameras.main.setBounds(0, 0, worldWidth, 450);
+
+    cursors = this.input.keyboard.createCursorKeys();
+    attackKey = this.input.keyboard.addKey('SPACE');
+    scoreText = this.add.text(16, 16, 'Score: 0', { fontSize: '24px', fill: '#fff' }).setScrollFactor(0);
+
+    // --------------------------------------------------------------------------------------------------
+    // 8. NIEUW: DE START INSTRUCTIE
+    // --------------------------------------------------------------------------------------------------
+    startInstruction = this.add.text(400, 200, 'GA NAAR DE VILLA!\n>>>', { 
+        fontSize: '48px', 
+        fill: '#0f0', // Felgroen
+        fontStyle: 'bold', 
+        align: 'center', 
+        backgroundColor: '#000', 
+        padding: 20 
+    });
+    startInstruction.setOrigin(0.5).setScrollFactor(0); // Zet in het midden van het scherm
+
+    // Laat de instructie na 3 seconden (3000 ms) verdwijnen
+    this.time.delayedCall(3000, () => {
+        // Gebruik een kleine fade-out animatie voor de tekst
+        this.tweens.add({
+            targets: startInstruction,
+            alpha: 0,
+            duration: 500, // Halve seconde fade
+            onComplete: () => {
+                startInstruction.destroy(); // Verwijder de tekst definitief
+            }
+        });
+    });
+    // --------------------------------------------------------------------------------------------------
+}
+
+function update() {
+    if (gameOver) return;
+
+    if (cursors.left.isDown) { player.setVelocityX(-260); player.setFlipX(false); }
+    else if (cursors.right.isDown) { player.setVelocityX(260); player.setFlipX(true); }
+    else { player.setVelocityX(0); }
+
+    if (cursors.up.isDown && player.body.touching.down) { player.setVelocityY(-570); }
+
+    if (Phaser.Input.Keyboard.JustDown(attackKey) && !isAttacking) {
+        isAttacking = true;
+        player.setTint(0xffff00);
+        this.time.delayedCall(200, () => { isAttacking = false; player.clearTint(); });
+    }
+
+    attackHitbox.x = player.x + (player.flipX ? 45 : -45);
+    attackHitbox.y = player.y;
+
+    // Vleermuis AI
+    bats.children.iterate(bat => {
+        if (!bat) return;
+        let distance = Phaser.Math.Distance.Between(player.x, player.y, bat.x, bat.y);
+        
+        if (distance < 250 && !bat.isTargeting) {
+            bat.isTargeting = true;
+            bat.setTint(0xff0000);
+            this.time.delayedCall(500, () => {
+                if (bat.active && !gameOver) this.physics.moveToObject(bat, player, 280);
+            });
+        } else if (!bat.isTargeting) {
+            bat.diveTimer += 0.04;
+            bat.y = bat.startY + Math.sin(bat.diveTimer) * 50;
+        }
+    });
+
+    if (player.y > 480) hitPlayer.call(this);
+}
+
+function hitPlayer() {
+    if (gameOver) return;
+    gameOver = true;
+    this.physics.pause();
+    player.setTint(0xff0000);
+    // Verwijder instructie als je direct afgaat
+    if(startInstruction) startInstruction.destroy();
+    
+    let txt = this.add.text(400, 200, 'MISLUKT!\nDruk F5 om te herstarten', { fontSize: '40px', fill: '#f00', align: 'center', backgroundColor: '#000' });
+    txt.setOrigin(0.5).setScrollFactor(0);
+}
+
+function winGame() {
+    if (gameOver) return;
+    gameOver = true;
+    this.physics.pause();
+    let txt = this.add.text(400, 200, 'GEWONNEN!\nVeilig bij de Villa', { fontSize: '40px', fill: '#0f0', align: 'center', backgroundColor: '#000' });
+    txt.setOrigin(0.5).setScrollFactor(0);
+}
+</script>
+</body>
+</html>
